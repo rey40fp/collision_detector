@@ -1,0 +1,70 @@
+#!/bin/bash
+
+SESSION=acl
+NAME=sim
+
+# creates the session with a name and renames the window name
+cmd="new-session -d -s $SESSION -x- -y- ; rename-window $NAME"
+
+# window number
+w=0
+
+# splits tmux into a 3x2 grid
+cmd="$cmd ; split-window -v"
+cmd="$cmd ; select-pane -t $SESSION:$w.1"
+cmd="$cmd ; split-window -h"
+cmd="$cmd ; select-pane -t $SESSION:$w.1"
+cmd="$cmd ; split-window -v"
+cmd="$cmd ; select-pane -t $SESSION:$w.3"
+cmd="$cmd ; split-window -v"
+cmd="$cmd ; select-pane -t $SESSION:$w.4"
+cmd="$cmd ; split-window -v"
+cmd="$cmd ; select-pane -t $SESSION:$w.5"
+cmd="$cmd ; split-window -h"
+cmd="$cmd ; select-pane -t $SESSION:$w.6"
+cmd="$cmd ; split-window -v"
+cmd="$cmd ; select-pane -t $SESSION:$w.7"
+cmd="$cmd ; split-window -h"
+cmd="$cmd ; select-pane -t $SESSION:$w.8"
+
+# resize
+cmd="$cmd ; resize-pane -t $SESSION:$w.0 -y 20" # arming
+# cmd="$cmd ; resize-pane -t $SESSION:$w.1 -x 100 -y 110" # outer_loop
+# cmd="$cmd ; resize-pane -t $SESSION:$w.2 -x 100 -y 16" # outer_loop
+#cmd="$cmd ; resize-pane -t $SESSION:$w.3 -x 35" # voxl-inspect-cpu
+
+# creates the tmux session
+tmux -2 $cmd
+
+# wait for .bashrc to load
+sleep 1
+
+# ensure a snapros docker container exists
+
+
+# send commands to each pane
+tmux send-keys -t $SESSION:$w.1 "roslaunch snap_sim sim.launch veh:=SQ num:=01" C-m
+tmux send-keys -t $SESSION:$w.5 "roslaunch snap_sim sim.launch veh:=SQ num:=03" C-m
+tmux send-keys -t $SESSION:$w.6 "roslaunch snap_sim sim.launch veh:=SQ num:=04" C-m
+tmux send-keys -t $SESSION:$w.0 "cd ~/acl_ws/ && roslaunch collision_detection collision_detection.launch" 
+tmux send-keys -t $SESSION:$w.3 "roslaunch snap_sim sim.launch veh:=SQ num:=02" C-m
+#tmux send-keys -t $SESSION:$w.3 "voxl-inspect-cpu" C-m
+
+sleep 5
+
+
+tmux send-keys -t $SESSION:$w.2 "roslaunch acl_joy key.launch veh:=SQ num:=01s" C-m
+sleep 1
+tmux send-keys -t $SESSION:$w.4 "roslaunch acl_joy key.launch veh:=SQ num:=02s" C-m
+sleep 1
+tmux send-keys -t $SESSION:$w.7 "roslaunch acl_joy key.launch veh:=SQ num:=03s" C-m
+sleep 1
+tmux send-keys -t $SESSION:$w.8 "roslaunch acl_joy key.launch veh:=SQ num:=04s" C-m
+#sleep 10
+
+
+
+# select the out_loop pane by default
+tmux select-pane -t $SESSION:$w.0
+
+tmux -2 attach-session -t $SESSION

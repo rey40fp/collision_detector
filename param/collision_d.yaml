@@ -1,0 +1,16 @@
+
+#Change for sim or hardware experiment
+is_sim: True
+
+#Number of agents that are going to be used in the experiment
+number_of_agents: 6
+
+
+#Bounding Box
+
+bbox_x: 1.0
+bbox_y: 1.0
+bbox_z: 1.0
+
+
+

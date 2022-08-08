@@ -1,0 +1,4 @@
+<launch>
+  <node name="collision_detection" pkg="collision_detection" type="collision_detector.py" output="screen"/>
+  <rosparam file="$(find collision_detection)/param/collision_d.yaml" />
+</launch>
