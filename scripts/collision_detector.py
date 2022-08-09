@@ -1,7 +1,7 @@
 #!/usr/bin/env python
   
-#Author:
-#Date: 
+#Author: Reinaldo Figueroa
+#Date: 08/05/2022
 
 #you can get transformation btwn two agents and if they are too close (violating bbox) then it prints out warning
 #the reason why we use tf instead of snapstack_msgs/State is two agents publish their states asynchrnonously and therefore comparing
@@ -15,6 +15,7 @@ import math
 import os
 import time
 import rospy
+import rosnode
 import rosgraph
 from geometry_msgs.msg import PoseStamped
 from snapstack_msgs.msg import State , Goal
@@ -25,7 +26,14 @@ import tf2_ros
 from numba import jit
 from numba.experimental import jitclass
 
-# @jit(nopython=True)
+
+
+def from_list_of_list_toList (n_list):
+
+    flat_list = [item for sublist in n_list for item in sublist]
+    return flat_list
+
+
 def two_agent_collision_check(np_arr,agents,bbox):
     if (abs(np_arr[agents[0],0] - np_arr[agents[1],0]) < bbox[0]
     and abs(np_arr[agents[0],1] - np_arr[agents[1],1]) < bbox[1]
@@ -58,8 +66,9 @@ class CollisionDetector:
         self.bbox_z = rospy.get_param('/bbox_z', 1.0)
         self.is_sim = rospy.get_param('/is_sim', True)
         self.num_of_agents = rospy.get_param('/number_of_agents', 6)
+        self.planner = rospy.get_param('/planner','mader')
 
-        self.killed_agents = []
+        self.killed_agents = set()
 
         self.initialized = True
 
@@ -80,6 +89,7 @@ class CollisionDetector:
 
                     if two_agent_collision_check(self.state_pos,[i-1,j-1],[self.bbox_x,self.bbox_y,self.bbox_y]):
                         self.kill_command(agent1,agent2)
+                        # self.kill_drone_topics(agent1,agent2)
                     # if (abs(self.state_pos[i-1,0] - self.state_pos[j-1,0]) < self.bbox_x
                     #     and abs(self.state_pos[i-1,1] - self.state_pos[j-1,1]) < self.bbox_y
                     #     and abs(self.state_pos[i-1,2] - self.state_pos[j-1,2]) < self.bbox_z):
@@ -125,6 +135,19 @@ class CollisionDetector:
 
 
 
+    def kill_drone_topics(self,agent1,agent2):
+        # p_topics = listt
+        p_topics = rosnode.get_node_names()
+        # p_flat_topics = from_list_of_list_toList(p_topics)
+        p_flat_topics = p_topics
+        agent1_planner = agent1 + '/' + self.planner
+        agent2_planner = agent2 + '/' + self.planner
+        agent1_topic = [x for x in p_flat_topics if all(y in x for y in [agent1_planner])]
+        agent2_topic = [x for x in p_flat_topics if all(y in x for y in [agent2_planner])]
+        rosnode.kill_nodes(agent1_topic+agent2_topic + [agent1+'/position_exchange',agent2+'/position_exchange'])
+
+
+
 
 
     def kill_command(self,agent1, agent2): 
@@ -139,8 +162,10 @@ class CollisionDetector:
         # if agent2 not in self.killed_agents: 
         self.pub_goal2 = rospy.Publisher('/'+ agent2 +'/collision_detector', Goal, queue_size=10)
         self.pub_goal2.publish(self.goal)
+        # if agent1 not in self.killed_agents: self.killed_agents.add(agent1)
+        # if agent2 not in self.killed_agents: self.killed_agents.add(agent2)
         # self.killed_agents.append(agent2)
-        print(str(agent2) + 'has been killed') 
+        # print(str(agent2) + 'has been killed') 
         # print(self.killed_agents)
 
         # pass
@@ -186,3 +211,4 @@ if __name__ == '__main__':
 
 ######TODO
 #-Wait for Goal to be publised to start algorithm (No?)
+###### ------ Add planner name to yaml!

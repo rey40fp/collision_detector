@@ -8,9 +8,10 @@ number_of_agents: 6
 
 #Bounding Box
 
-bbox_x: 0.8
-bbox_y: 0.8
-bbox_z: 0.8
+bbox_x: 0.7
+bbox_y: 0.7
+bbox_z: 0.7
 
+planner: 'mader'
 
 
